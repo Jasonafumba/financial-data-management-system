@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <?!= include_('Styles'); ?>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <div class="demo-banner">⚡ DEMO VERSION — fictional data, no real payments or emails are processed</div>
+
+  <div class="navbar">
+    <div class="navbar-brand">
+      <div class="badge-icon" id="logoIcon">🏦</div>
+      <img id="logoImg" class="logo-img" alt="Logo" style="display:none;">
+      <div>
+        <?= orgName ?><br>
+        <span style="font-weight:400;font-size:12px;opacity:0.85;">Finance Management — Demo</span>
+      </div>
+    </div>
+    <div class="navbar-user">
+      <span class="badge-role">DEMO VERSION</span>
+    </div>
+  </div>
+
+  <div class="intro-bar">
+    A lightweight financial tracking system originally built for a student association — this structure adapts easily to clubs, NGOs, small teams, or any organization managing recurring payments and expenses.
+  </div>
+
+  <div class="nav-tabs" id="navTabs">
+    <button class="nav-tab" data-view="member" onclick="showView('member')">📝 Submit a Payment</button>
+    <button class="nav-tab" data-view="pending" onclick="showView('pending')">⏳ Pending Payments</button>
+    <button class="nav-tab" data-view="expense" onclick="showView('expense')">💸 Record an Expense</button>
+    <button class="nav-tab" data-view="dashboard" onclick="showView('dashboard')">📊 Dashboard</button>
+  </div>
+
+  <div class="container">
+
+    <!-- ================= VIEW: MEMBER — SUBMIT A PAYMENT ================= -->
+    <div class="view" id="view-member">
+      <div class="page-title">Submit a Payment</div>
+      <div class="page-subtitle">Try the member experience — fill in as much or as little as you like, nothing here is required.</div>
+
+      <div class="card">
+        <form id="formMember" onsubmit="return false;">
+          <div class="form-grid">
+            <div class="field">
+              <label>Full name</label>
+              <input type="text" id="m_name" placeholder="e.g. John Doe">
+            </div>
+            <div class="field">
+              <label>University</label>
+              <select id="m_university"></select>
+            </div>
+            <div class="field full">
+              <label>Email <span class="hint">— you'll get your receipt here</span></label>
+              <input type="email" id="m_email" placeholder="Enter any email — in the real system, this is where your payment receipt would be sent automatically after approval">
+            </div>
+            <div class="field">
+              <label>Reason</label>
+              <select id="m_reason"></select>
+            </div>
+            <div class="field">
+              <label>Amount</label>
+              <input type="number" id="m_amount" min="0" step="0.01" placeholder="0.00">
+            </div>
+            <div class="field">
+              <label>Currency</label>
+              <select id="m_currency"></select>
+            </div>
+            <div class="field">
+              <label>Transaction number</label>
+              <div class="input-with-button">
+                <input type="text" id="m_transaction" placeholder="e.g. TXN-100234">
+                <button type="button" class="btn-inline" onclick="generateTransactionNumber('m_transaction')">🎲 Generate</button>
+              </div>
+            </div>
+            <div class="field full">
+              <label>Payment date</label>
+              <input type="date" id="m_date">
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" id="btnSubmitPayment" onclick="submitMemberPayment()">✔ Submit Payment</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ================= VIEW: PENDING PAYMENTS ================= -->
+    <div class="view" id="view-pending">
+      <div class="page-title">Pending Payments</div>
+      <div class="page-subtitle">Review each submission, then approve or reject it.</div>
+      <div id="pendingContainer" class="payments-grid">
+        <div class="empty-state">Loading…</div>
+      </div>
+    </div>
+
+    <!-- ================= VIEW: RECORD AN EXPENSE ================= -->
+    <div class="view" id="view-expense">
+      <div class="page-title">Record an Expense</div>
+      <div class="page-subtitle">Try the financial officer experience — nothing here is required either.</div>
+
+      <div class="card">
+        <form id="formExpense" onsubmit="return false;">
+          <div class="form-grid">
+            <div class="field">
+              <label>Date</label>
+              <input type="date" id="e_date">
+            </div>
+            <div class="field">
+              <label>Category</label>
+              <select id="e_category"></select>
+            </div>
+            <div class="field">
+              <label>Amount</label>
+              <input type="number" id="e_amount" min="0" step="0.01" placeholder="0.00">
+            </div>
+            <div class="field">
+              <label>Currency</label>
+              <select id="e_currency"></select>
+            </div>
+            <div class="field full">
+              <label>Transaction number</label>
+              <div class="input-with-button">
+                <input type="text" id="e_transaction" placeholder="e.g. TXN-200110">
+                <button type="button" class="btn-inline" onclick="generateTransactionNumber('e_transaction')">🎲 Generate</button>
+              </div>
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" id="btnSubmitExpense" onclick="submitExpense()">✔ Record Expense</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ================= VIEW: DASHBOARD ================= -->
+    <div class="view" id="view-dashboard">
+      <div class="page-title">Dashboard</div>
+      <div class="page-subtitle">A live overview of <?= orgName ?>'s finances.</div>
+
+      <div class="card">
+        <div class="card-title">🔍 Filters</div>
+        <div class="filters-bar">
+          <div class="field"><label>Reason</label><select id="f_reason"><option value="">All</option></select></div>
+          <div class="field"><label>University</label><select id="f_university"><option value="">All</option></select></div>
+          <div class="field"><label>Currency</label><select id="f_currency"><option value="">All</option></select></div>
+          <div class="field"><label>From</label><input type="date" id="f_dateFrom"></div>
+          <div class="field"><label>To</label><input type="date" id="f_dateTo"></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="loadDashboard()">Apply filters</button>
+          <button class="btn btn-ghost" onclick="resetFilters()">Reset</button>
+        </div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card income"><div class="kpi-label">Total Income</div><div class="kpi-value" id="kpiIncome">—</div></div>
+        <div class="kpi-card expenses"><div class="kpi-label">Total Expenses</div><div class="kpi-value" id="kpiExpenses">—</div></div>
+        <div class="kpi-card balance"><div class="kpi-label">Balance</div><div class="kpi-value" id="kpiBalance">—</div></div>
+        <div class="kpi-card count"><div class="kpi-label">Approved Payments</div><div class="kpi-value" id="kpiCountIncome">—</div></div>
+        <div class="kpi-card count"><div class="kpi-label">Expenses</div><div class="kpi-value" id="kpiCountExpenses">—</div></div>
+      </div>
+
+      <div class="charts-grid">
+        <div class="card"><div class="card-title">📈 Monthly income trend</div><div class="chart-box"><canvas id="chartIncome"></canvas></div></div>
+        <div class="card"><div class="card-title">📉 Monthly expense trend</div><div class="chart-box"><canvas id="chartExpenses"></canvas></div></div>
+        <div class="card"><div class="card-title">🥧 Income by reason</div><div class="chart-box"><canvas id="chartReasons"></canvas></div></div>
+        <div class="card"><div class="card-title">📊 Income vs Expenses</div><div class="chart-box"><canvas id="chartComparison"></canvas></div></div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer class="app-footer">© 2026 <?= orgName ?> — Demo built for portfolio purposes</footer>
+
+  <!-- ================= RECEIPT PREVIEW MODAL ================= -->
+  <div class="modal-overlay" id="receiptOverlay">
+    <div class="receipt-card">
+      <div class="receipt-head">✅ Payment Approved</div>
+      <div class="receipt-body">
+        <div class="label">Receipt Preview</div>
+        <div class="receipt-row"><span>Receipt ID</span><span id="r_id"></span></div>
+        <div class="receipt-row"><span>Member</span><span id="r_name"></span></div>
+        <div class="receipt-row"><span>University</span><span id="r_university"></span></div>
+        <div class="receipt-row"><span>Reason</span><span id="r_reason"></span></div>
+        <div class="receipt-row"><span>Amount</span><span id="r_amount"></span></div>
+        <div class="receipt-row"><span>Transaction #</span><span id="r_transaction"></span></div>
+        <div class="receipt-row"><span>Payment date</span><span id="r_paymentDate"></span></div>
+        <div class="receipt-row"><span>Approved by</span><span id="r_approvedBy"></span></div>
+        <div class="receipt-row"><span>Approval date</span><span id="r_approvalDate"></span></div>
+        <div class="receipt-note">ℹ️ In the live system, this receipt is automatically generated as a PDF and emailed to the payer instantly.</div>
+      </div>
+      <div class="receipt-foot">
+        <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="closeReceipt()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    var charts = {};
+
+    /* ============================ NAVIGATION ============================ */
+    function showView(name) {
+      document.querySelectorAll('.view').forEach(function (v) { v.classList.remove('active'); });
+      document.querySelectorAll('.nav-tab').forEach(function (t) { t.classList.remove('active'); });
+      document.getElementById('view-' + name).classList.add('active');
+      document.querySelector('.nav-tab[data-view="' + name + '"]').classList.add('active');
+      if (name === 'pending') loadPending();
+      if (name === 'dashboard') loadDashboard();
+    }
+
+    /* ============================ TOAST ============================ */
+    var toastTimer = null;
+    function showToast(message, type) {
+      var el = document.getElementById('toast');
+      el.textContent = message;
+      el.className = 'toast show' + (type ? ' ' + type : '');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () { el.classList.remove('show'); }, 3800);
+    }
+
+    /* ============================ TRANSACTION NUMBER HELPER ============================ */
+    function generateTransactionNumber(inputId) {
+      var n = 'TXN-' + Math.floor(100000 + Math.random() * 899999);
+      document.getElementById(inputId).value = n;
+    }
+
+    /* ============================ LOGO ============================ */
+    function applyLogo(url) {
+      var logoImg = document.getElementById('logoImg');
+      var logoIcon = document.getElementById('logoIcon');
+      if (!logoImg || !logoIcon) return;
+      if (!url) { logoImg.style.display = 'none'; logoIcon.style.display = 'flex'; return; }
+      logoImg.onload = function () { logoIcon.style.display = 'none'; logoImg.style.display = 'block'; };
+      logoImg.onerror = function () { logoImg.style.display = 'none'; logoIcon.style.display = 'flex'; };
+      logoImg.src = url;
+    }
+
+    /* ============================ PARAMS (dropdowns) ============================ */
+    function fillSelect(select, values, placeholder) {
+      select.innerHTML = '';
+      var opt = document.createElement('option');
+      opt.value = ''; opt.textContent = placeholder;
+      select.appendChild(opt);
+      (values || []).forEach(function (v) {
+        var o = document.createElement('option');
+        o.value = v; o.textContent = v;
+        select.appendChild(o);
+      });
+    }
+
+    function loadParams() {
+      google.script.run.withSuccessHandler(function (params) {
+        applyLogo(params.LOGO_URL);
+        fillSelect(document.getElementById('m_university'), params.UNIVERSITIES, 'Select (optional)');
+        fillSelect(document.getElementById('m_reason'), params.REASONS, 'Select (optional)');
+        fillSelect(document.getElementById('m_currency'), params.CURRENCIES, 'Select (optional)');
+        fillSelect(document.getElementById('e_category'), params.EXPENSE_CATEGORIES, 'Select (optional)');
+        fillSelect(document.getElementById('e_currency'), params.CURRENCIES, 'Select (optional)');
+        fillSelect(document.getElementById('f_reason'), params.REASONS, 'All');
+        fillSelect(document.getElementById('f_university'), params.UNIVERSITIES, 'All');
+        fillSelect(document.getElementById('f_currency'), params.CURRENCIES, 'All');
+      }).withFailureHandler(function (err) {
+        showToast('Could not load parameters: ' + err.message, 'error');
+      }).getParams();
+    }
+
+    /* ============================ MEMBER: SUBMIT PAYMENT ============================ */
+    function submitMemberPayment() {
+      var btn = document.getElementById('btnSubmitPayment');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Submitting…';
+
+      var data = {
+        name: document.getElementById('m_name').value.trim(),
+        university: document.getElementById('m_university').value,
+        email: document.getElementById('m_email').value.trim(),
+        reason: document.getElementById('m_reason').value,
+        amount: document.getElementById('m_amount').value,
+        currency: document.getElementById('m_currency').value,
+        transactionNumber: document.getElementById('m_transaction').value.trim(),
+        paymentDate: document.getElementById('m_date').value
+      };
+
+      google.script.run.withSuccessHandler(function (res) {
+        btn.disabled = false;
+        btn.innerHTML = '✔ Submit Payment';
+        showToast('Payment submitted (' + res.idPayment + '). It is now pending review.', 'success');
+        document.getElementById('formMember').reset();
+      }).withFailureHandler(function (err) {
+        btn.disabled = false;
+        btn.innerHTML = '✔ Submit Payment';
+        showToast('Error: ' + err.message, 'error');
+      }).submitPayment(data);
+    }
+
+    /* ============================ PENDING PAYMENTS ============================ */
+    function loadPending() {
+      var container = document.getElementById('pendingContainer');
+      container.innerHTML = '<div class="empty-state">Loading…</div>';
+      google.script.run.withSuccessHandler(function (payments) {
+        if (!payments.length) {
+          container.innerHTML = '<div class="empty-state">No pending payments 🎉</div>';
+          return;
+        }
+        container.innerHTML = '';
+        payments.forEach(function (p) {
+          var card = document.createElement('div');
+          card.className = 'payment-card';
+          card.innerHTML =
+            '<div class="pid">' + p.idPayment + '</div>' +
+            '<div class="row"><span>Name</span><span>' + escapeHtml(p.name || '—') + '</span></div>' +
+            '<div class="row"><span>University</span><span>' + escapeHtml(p.university || '—') + '</span></div>' +
+            '<div class="row"><span>Reason</span><span>' + escapeHtml(p.reason || '—') + '</span></div>' +
+            '<div class="row"><span>Amount</span><span>' + (p.amount || 0) + ' ' + escapeHtml(p.currency || '') + '</span></div>' +
+            '<div class="row"><span>Transaction #</span><span>' + escapeHtml(p.transactionNumber || '—') + '</span></div>' +
+            '<div class="row"><span>Date</span><span>' + escapeHtml(p.paymentDate || '—') + '</span></div>' +
+            '<div class="actions">' +
+            '<button class="btn btn-success" onclick="approve(this, \'' + p.idPayment + '\')">✅ Approve</button>' +
+            '<button class="btn btn-danger" onclick="reject(this, \'' + p.idPayment + '\')">❌ Reject</button>' +
+            '</div>';
+          container.appendChild(card);
+        });
+      }).withFailureHandler(function (err) {
+        container.innerHTML = '<div class="empty-state">Error: ' + err.message + '</div>';
+      }).getPendingPayments();
+    }
+
+    function approve(btn, idPayment) {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>';
+      google.script.run.withSuccessHandler(function (res) {
+        showReceipt(res.receipt);
+        loadPending();
+      }).withFailureHandler(function (err) {
+        showToast('Error: ' + err.message, 'error');
+        btn.disabled = false;
+        btn.innerHTML = '✅ Approve';
+      }).approvePayment(idPayment);
+    }
+
+    function reject(btn, idPayment) {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>';
+      google.script.run.withSuccessHandler(function (res) {
+        showToast('Payment ' + res.idPayment + ' rejected.', 'success');
+        loadPending();
+      }).withFailureHandler(function (err) {
+        showToast('Error: ' + err.message, 'error');
+        btn.disabled = false;
+        btn.innerHTML = '❌ Reject';
+      }).rejectPayment(idPayment);
+    }
+
+    /* ============================ RECEIPT PREVIEW MODAL ============================ */
+    function showReceipt(r) {
+      document.getElementById('r_id').textContent = r.idPayment || '—';
+      document.getElementById('r_name').textContent = r.name || '—';
+      document.getElementById('r_university').textContent = r.university || '—';
+      document.getElementById('r_reason').textContent = r.reason || '—';
+      document.getElementById('r_amount').textContent = (r.amount || 0) + ' ' + (r.currency || '');
+      document.getElementById('r_transaction').textContent = r.transactionNumber || '—';
+      document.getElementById('r_paymentDate').textContent = r.paymentDate || '—';
+      document.getElementById('r_approvedBy').textContent = r.processedBy || '—';
+      document.getElementById('r_approvalDate').textContent = r.processedDate || '—';
+      document.getElementById('receiptOverlay').classList.add('show');
+    }
+    function closeReceipt() {
+      document.getElementById('receiptOverlay').classList.remove('show');
+    }
+
+    /* ============================ EXPENSES ============================ */
+    function submitExpense() {
+      var btn = document.getElementById('btnSubmitExpense');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Recording…';
+
+      var data = {
+        expenseDate: document.getElementById('e_date').value,
+        category: document.getElementById('e_category').value,
+        amount: document.getElementById('e_amount').value,
+        currency: document.getElementById('e_currency').value,
+        transactionNumber: document.getElementById('e_transaction').value.trim()
+      };
+
+      google.script.run.withSuccessHandler(function (res) {
+        btn.disabled = false;
+        btn.innerHTML = '✔ Record Expense';
+        showToast('Expense recorded (' + res.idExpense + ').', 'success');
+        document.getElementById('formExpense').reset();
+      }).withFailureHandler(function (err) {
+        btn.disabled = false;
+        btn.innerHTML = '✔ Record Expense';
+        showToast('Error: ' + err.message, 'error');
+      }).recordExpense(data);
+    }
+
+    /* ============================ DASHBOARD ============================ */
+    function resetFilters() {
+      document.getElementById('f_reason').value = '';
+      document.getElementById('f_university').value = '';
+      document.getElementById('f_currency').value = '';
+      document.getElementById('f_dateFrom').value = '';
+      document.getElementById('f_dateTo').value = '';
+      loadDashboard();
+    }
+
+    function currentFilters() {
+      return {
+        reason: document.getElementById('f_reason').value,
+        university: document.getElementById('f_university').value,
+        currency: document.getElementById('f_currency').value,
+        dateFrom: document.getElementById('f_dateFrom').value,
+        dateTo: document.getElementById('f_dateTo').value
+      };
+    }
+
+    function loadDashboard() {
+      google.script.run.withSuccessHandler(function (data) {
+        document.getElementById('kpiIncome').textContent = formatNumber(data.kpi.totalIncome);
+        document.getElementById('kpiExpenses').textContent = formatNumber(data.kpi.totalExpenses);
+        document.getElementById('kpiBalance').textContent = formatNumber(data.kpi.balance);
+        document.getElementById('kpiCountIncome').textContent = data.kpi.approvedCount;
+        document.getElementById('kpiCountExpenses').textContent = data.kpi.expenseCount;
+
+        renderLineChart('chartIncome', data.monthly.labels, data.monthly.income, '#1E8E5A', 'Income');
+        renderLineChart('chartExpenses', data.monthly.labels, data.monthly.expenses, '#C62828', 'Expenses');
+        renderPieChart('chartReasons', data.reasonBreakdown.labels, data.reasonBreakdown.values);
+        renderBarChart('chartComparison', ['Income', 'Expenses'], [data.comparison.totalIncome, data.comparison.totalExpenses]);
+      }).withFailureHandler(function (err) {
+        showToast('Dashboard error: ' + err.message, 'error');
+      }).getDashboardData(currentFilters());
+    }
+
+    function formatNumber(n) { return Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 2 }); }
+    function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+
+    function renderLineChart(canvasId, labels, values, color, label) {
+      destroyChart(canvasId);
+      var ctx = document.getElementById(canvasId).getContext('2d');
+      charts[canvasId] = new Chart(ctx, {
+        type: 'line',
+        data: { labels: labels, datasets: [{ label: label, data: values, borderColor: color, backgroundColor: color + '33', fill: true, tension: 0.3 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+      });
+    }
+
+    function renderPieChart(canvasId, labels, values) {
+      destroyChart(canvasId);
+      var ctx = document.getElementById(canvasId).getContext('2d');
+      var palette = ['#0B3D91', '#1E5FD9', '#1E8E5A', '#C77700', '#C62828', '#6B7280', '#8E44AD', '#16A085'];
+      charts[canvasId] = new Chart(ctx, {
+        type: 'pie',
+        data: { labels: labels, datasets: [{ data: values, backgroundColor: labels.map(function (_, i) { return palette[i % palette.length]; }) }] },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+    }
+
+    function renderBarChart(canvasId, labels, values) {
+      destroyChart(canvasId);
+      var ctx = document.getElementById(canvasId).getContext('2d');
+      charts[canvasId] = new Chart(ctx, {
+        type: 'bar',
+        data: { labels: labels, datasets: [{ data: values, backgroundColor: ['#1E8E5A', '#C62828'] }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+      });
+    }
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+
+    /* ============================ INIT ============================ */
+    document.addEventListener('DOMContentLoaded', function () {
+      loadParams();
+      showView('member');
+    });
+  </script>
+
+</body>
+</html>
