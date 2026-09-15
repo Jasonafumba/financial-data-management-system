@@ -6,6 +6,10 @@ A lightweight financial management and reporting system designed to streamline p
 
 The system combines Google Sheets, Google Apps Script, Google Drive, Google Docs, and a web-based interface to create a structured financial workflow for organizations.
 
+## 🚀 Live Demo
+
+[Open the Live Demo]:https://script.google.com/macros/s/AKfycbxwzRXikPgzXgqwvCEGVWsTtJov_-SNJppO06ji4PSIdUa_jvlIVtomn9Zw8VO81Z7Pnw/exec
+
 ## Key Features
 
 * Member payment submission
