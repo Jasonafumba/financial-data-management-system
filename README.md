@@ -8,7 +8,7 @@ The system combines Google Sheets, Google Apps Script, Google Drive, Google Docs
 
 ## 🚀 Live Demo
 
-[Open the Live Demo]:https://script.google.com/macros/s/AKfycbxwzRXikPgzXgqwvCEGVWsTtJov_-SNJppO06ji4PSIdUa_jvlIVtomn9Zw8VO81Z7Pnw/exec
+[Open the Live Demo](https://script.google.com/macros/s/AKfycbxwzRXikPgzXgqwvCEGVWsTtJov_-SNJppO06ji4PSIdUa_jvlIVtomn9Zw8VO81Z7Pnw/exec)
 
 ## Key Features
 
